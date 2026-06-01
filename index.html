@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1日のスケジュール</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+      background: #f0f4f8;
+      color: #2d3748;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+
+    header h1 { font-size: 1.5rem; font-weight: 700; }
+    #header-date { font-size: 0.9rem; opacity: 0.85; margin-top: 4px; }
+    #current-time {
+      font-size: 2rem;
+      font-weight: 300;
+      letter-spacing: 2px;
+    }
+
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+
+    /* Add button */
+    .add-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 22px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 24px;
+      transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 2px 8px rgba(102,126,234,0.4);
+    }
+    .add-btn:hover { background: #5a6fd6; transform: translateY(-1px); }
+    .add-btn:active { transform: translateY(0); }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 64px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 44px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #e2e8f0;
+    }
+
+    .time-slot {
+      position: relative;
+      margin-bottom: 4px;
+    }
+
+    .time-label {
+      position: absolute;
+      left: -64px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.75rem;
+      color: #a0aec0;
+      width: 36px;
+      text-align: right;
+    }
+
+    /* Event card */
+    .event-card {
+      background: white;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      border-left: 4px solid transparent;
+      transition: box-shadow 0.2s, transform 0.1s;
+      position: relative;
+      cursor: pointer;
+    }
+    .event-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); transform: translateY(-1px); }
+
+    .event-card.category-work     { border-left-color: #4299e1; }
+    .event-card.category-meal     { border-left-color: #48bb78; }
+    .event-card.category-break    { border-left-color: #ed8936; }
+    .event-card.category-exercise { border-left-color: #e53e3e; }
+    .event-card.category-other    { border-left-color: #9f7aea; }
+
+    .event-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+    .category-work .event-dot     { background: #4299e1; }
+    .category-meal .event-dot     { background: #48bb78; }
+    .category-break .event-dot    { background: #ed8936; }
+    .category-exercise .event-dot { background: #e53e3e; }
+    .category-other .event-dot    { background: #9f7aea; }
+
+    .event-body { flex: 1; min-width: 0; }
+    .event-time { font-size: 0.78rem; color: #718096; margin-bottom: 2px; }
+    .event-title { font-weight: 600; font-size: 0.98rem; word-break: break-word; }
+    .event-note { font-size: 0.82rem; color: #718096; margin-top: 4px; word-break: break-word; }
+
+    .event-actions {
+      display: flex;
+      gap: 6px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+    }
+    .event-card:hover .event-actions { opacity: 1; }
+
+    .icon-btn {
+      background: none;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .icon-btn:hover { background: #f7fafc; }
+    .icon-btn.delete:hover { background: #fff5f5; border-color: #feb2b2; }
+
+    /* Current time indicator */
+    .now-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .now-line::after {
+      content: '';
+      flex: 1;
+      height: 2px;
+      background: #e53e3e;
+    }
+    .now-badge {
+      background: #e53e3e;
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: #a0aec0;
+    }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 0.95rem; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: white;
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: slideUp 0.2s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+
+    .modal h2 { font-size: 1.2rem; margin-bottom: 20px; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 6px;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.92rem;
+      font-family: inherit;
+      color: #2d3748;
+      transition: border-color 0.15s;
+      outline: none;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: #667eea; }
+    .form-group textarea { resize: vertical; min-height: 72px; }
+
+    .time-row { display: flex; gap: 12px; }
+    .time-row .form-group { flex: 1; }
+
+    .category-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .pill {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1.5px solid #e2e8f0;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: white;
+    }
+    .pill:hover { background: #f7fafc; }
+    .pill.selected { color: white; border-color: transparent; }
+    .pill[data-cat="work"].selected     { background: #4299e1; }
+    .pill[data-cat="meal"].selected     { background: #48bb78; }
+    .pill[data-cat="break"].selected    { background: #ed8936; }
+    .pill[data-cat="exercise"].selected { background: #e53e3e; }
+    .pill[data-cat="other"].selected    { background: #9f7aea; }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 22px;
+    }
+    .btn-cancel {
+      background: #f7fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-cancel:hover { background: #edf2f7; }
+    .btn-save {
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 22px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-save:hover { background: #5a6fd6; }
+
+    /* Section header */
+    .section-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #a0aec0;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>📅 今日のスケジュール</h1>
+    <div id="header-date"></div>
+  </div>
+  <div id="current-time"></div>
+</header>
+
+<div class="container">
+  <button class="add-btn" onclick="openModal()">
+    <span style="font-size:1.1rem">＋</span> 予定を追加
+  </button>
+
+  <div class="section-label">スケジュール一覧</div>
+  <div class="timeline" id="timeline"></div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <h2 id="modal-title">予定を追加</h2>
+
+    <div class="form-group">
+      <label>タイトル *</label>
+      <input type="text" id="input-title" placeholder="例: 朝のミーティング">
+    </div>
+
+    <div class="time-row">
+      <div class="form-group">
+        <label>開始時刻</label>
+        <input type="time" id="input-start" value="09:00">
+      </div>
+      <div class="form-group">
+        <label>終了時刻</label>
+        <input type="time" id="input-end" value="10:00">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>カテゴリ</label>
+      <div class="category-pills">
+        <button class="pill selected" data-cat="work"     onclick="selectCat(this)">💼 仕事</button>
+        <button class="pill"          data-cat="meal"     onclick="selectCat(this)">🍱 食事</button>
+        <button class="pill"          data-cat="break"    onclick="selectCat(this)">☕ 休憩</button>
+        <button class="pill"          data-cat="exercise" onclick="selectCat(this)">🏃 運動</button>
+        <button class="pill"          data-cat="other"    onclick="selectCat(this)">📌 その他</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>メモ（任意）</label>
+      <textarea id="input-note" placeholder="詳細やメモを入力..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="btn-save"   onclick="saveEvent()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'daily-schedule-v1';
+  let events = [];
+  let editingId = null;
+  let selectedCategory = 'work';
+
+  const CATEGORIES = {
+    work:     { label: '💼 仕事',  color: '#4299e1' },
+    meal:     { label: '🍱 食事',  color: '#48bb78' },
+    break:    { label: '☕ 休憩',  color: '#ed8936' },
+    exercise: { label: '🏃 運動',  color: '#e53e3e' },
+    other:    { label: '📌 その他', color: '#9f7aea' },
+  };
+
+  function load() {
+    try {
+      events = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch { events = []; }
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+  }
+
+  function timeToMin(t) {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  function formatTime(t) { return t; }
+
+  function render() {
+    const timeline = document.getElementById('timeline');
+    const sorted = [...events].sort((a, b) => timeToMin(a.start) - timeToMin(b.start));
+    const nowMin = getNowMin();
+
+    if (sorted.length === 0) {
+      timeline.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">🗓️</div>
+          <p>まだ予定がありません<br>「予定を追加」ボタンから追加しましょう</p>
+        </div>`;
+      return;
+    }
+
+    let html = '';
+    let nowInserted = false;
+
+    sorted.forEach((ev, i) => {
+      const evMin = timeToMin(ev.start);
+
+      if (!nowInserted && nowMin <= evMin) {
+        html += renderNowLine(nowMin);
+        nowInserted = true;
+      }
+
+      html += renderCard(ev);
+    });
+
+    if (!nowInserted) {
+      html += renderNowLine(nowMin);
+    }
+
+    timeline.innerHTML = html;
+  }
+
+  function renderNowLine(nowMin) {
+    const h = Math.floor(nowMin / 60).toString().padStart(2, '0');
+    const m = (nowMin % 60).toString().padStart(2, '0');
+    return `<div class="now-line"><span class="now-badge">現在 ${h}:${m}</span></div>`;
+  }
+
+  function renderCard(ev) {
+    const duration = ev.end ? ` - ${ev.end}` : '';
+    const noteHtml = ev.note ? `<div class="event-note">${escHtml(ev.note)}</div>` : '';
+    return `
+      <div class="event-card category-${ev.category}" onclick="openModal('${ev.id}')">
+        <div class="event-dot"></div>
+        <div class="event-body">
+          <div class="event-time">${ev.start}${duration}</div>
+          <div class="event-title">${escHtml(ev.title)}</div>
+          ${noteHtml}
+        </div>
+        <div class="event-actions">
+          <button class="icon-btn delete" title="削除" onclick="deleteEvent(event,'${ev.id}')">🗑️</button>
+        </div>
+      </div>`;
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function getNowMin() {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  }
+
+  function openModal(id) {
+    editingId = id || null;
+    const overlay = document.getElementById('modalOverlay');
+    document.getElementById('modal-title').textContent = id ? '予定を編集' : '予定を追加';
+
+    if (id) {
+      const ev = events.find(e => e.id === id);
+      if (!ev) return;
+      document.getElementById('input-title').value = ev.title;
+      document.getElementById('input-start').value = ev.start;
+      document.getElementById('input-end').value   = ev.end || '';
+      document.getElementById('input-note').value  = ev.note || '';
+      selectCatByKey(ev.category);
+    } else {
+      document.getElementById('input-title').value = '';
+      document.getElementById('input-start').value = '09:00';
+      document.getElementById('input-end').value   = '10:00';
+      document.getElementById('input-note').value  = '';
+      selectCatByKey('work');
+    }
+
+    overlay.classList.add('open');
+    setTimeout(() => document.getElementById('input-title').focus(), 100);
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+    editingId = null;
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('modalOverlay')) closeModal();
+  }
+
+  function saveEvent() {
+    const title = document.getElementById('input-title').value.trim();
+    if (!title) {
+      document.getElementById('input-title').focus();
+      document.getElementById('input-title').style.borderColor = '#e53e3e';
+      return;
+    }
+    document.getElementById('input-title').style.borderColor = '';
+
+    const ev = {
+      id:       editingId || Date.now().toString(),
+      title,
+      start:    document.getElementById('input-start').value,
+      end:      document.getElementById('input-end').value,
+      note:     document.getElementById('input-note').value.trim(),
+      category: selectedCategory,
+    };
+
+    if (editingId) {
+      const idx = events.findIndex(e => e.id === editingId);
+      if (idx >= 0) events[idx] = ev;
+    } else {
+      events.push(ev);
+    }
+
+    save();
+    render();
+    closeModal();
+  }
+
+  function deleteEvent(e, id) {
+    e.stopPropagation();
+    if (!confirm('この予定を削除しますか？')) return;
+    events = events.filter(ev => ev.id !== id);
+    save();
+    render();
+  }
+
+  function selectCat(btn) {
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedCategory = btn.dataset.cat;
+  }
+
+  function selectCatByKey(key) {
+    document.querySelectorAll('.pill').forEach(p => {
+      p.classList.toggle('selected', p.dataset.cat === key);
+    });
+    selectedCategory = key;
+  }
+
+  function updateClock() {
+    const now = new Date();
+    const hh = now.getHours().toString().padStart(2, '0');
+    const mm = now.getMinutes().toString().padStart(2, '0');
+    const ss = now.getSeconds().toString().padStart(2, '0');
+    document.getElementById('current-time').textContent = `${hh}:${mm}:${ss}`;
+  }
+
+  function updateDate() {
+    const now = new Date();
+    const days = ['日','月','火','水','木','金','土'];
+    const str = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
+    document.getElementById('header-date').textContent = str;
+  }
+
+  // Keyboard shortcut: Escape to close modal
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Enter' && e.ctrlKey && document.getElementById('modalOverlay').classList.contains('open')) {
+      saveEvent();
+    }
+  });
+
+  // Seed with sample data on first visit
+  function seedSampleData() {
+    if (localStorage.getItem(STORAGE_KEY)) return;
+    const samples = [
+      { id:'s1', title:'起床・朝の準備',    start:'07:00', end:'07:30', category:'other',    note:'シャワー・朝食' },
+      { id:'s2', title:'朝食',              start:'07:30', end:'08:00', category:'meal',     note:'' },
+      { id:'s3', title:'通勤',              start:'08:00', end:'09:00', category:'other',    note:'' },
+      { id:'s4', title:'午前のミーティング', start:'09:00', end:'10:30', category:'work',     note:'週次チームMTG' },
+      { id:'s5', title:'作業タイム',        start:'10:30', end:'12:00', category:'work',     note:'プロジェクト進捗' },
+      { id:'s6', title:'ランチ',            start:'12:00', end:'13:00', category:'meal',     note:'' },
+      { id:'s7', title:'コーヒーブレイク',   start:'15:00', end:'15:15', category:'break',    note:'' },
+      { id:'s8', title:'夕方ランニング',     start:'18:30', end:'19:30', category:'exercise', note:'5km' },
+      { id:'s9', title:'夕食',              start:'19:30', end:'20:00', category:'meal',     note:'' },
+    ];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(samples));
+  }
+
+  // Init
+  seedSampleData();
+  load();
+  render();
+  updateDate();
+  updateClock();
+  setInterval(updateClock, 1000);
+  setInterval(render, 60000); // re-render every minute to move "now" line
+</script>
+</body>
+</html>

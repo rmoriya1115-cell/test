@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>1日のスケジュール</title>
+  <title>今日の天気・ひと言・スケジュール</title>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
   <style>
@@ -58,6 +58,111 @@
     }
     .sync-btn:hover { background: rgba(255,255,255,0.28); }
 
+    /* ===== Daily Info Section (Weather + Quote) ===== */
+    .daily-info {
+      max-width: 780px;
+      margin: 20px auto 0;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 520px) {
+      .daily-info { grid-template-columns: 1fr; }
+    }
+
+    .weather-card, .quote-card {
+      background: white;
+      border-radius: 16px;
+      padding: 18px 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .card-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #a0aec0;
+      margin-bottom: 10px;
+    }
+
+    .weather-main {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .weather-icon { font-size: 2.8rem; line-height: 1; }
+
+    .weather-details { flex: 1; }
+
+    .weather-temp {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2d3748;
+      line-height: 1;
+    }
+
+    .weather-desc {
+      font-size: 0.88rem;
+      color: #718096;
+      margin-top: 3px;
+    }
+
+    .weather-sub {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: #a0aec0;
+    }
+
+    .weather-loading {
+      color: #a0aec0;
+      font-size: 0.88rem;
+    }
+
+    .weather-error {
+      color: #e53e3e;
+      font-size: 0.82rem;
+    }
+
+    .quote-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .quote-text {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #2d3748;
+      line-height: 1.65;
+      flex: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    .quote-text::before {
+      content: '"';
+      font-size: 2rem;
+      color: #667eea;
+      line-height: 0;
+      margin-right: 6px;
+      align-self: flex-start;
+      padding-top: 10px;
+    }
+
+    .quote-day {
+      font-size: 0.72rem;
+      color: #cbd5e0;
+      margin-top: 10px;
+      text-align: right;
+    }
+
+    /* ===== Container ===== */
     .container {
       max-width: 780px;
       margin: 0 auto;
@@ -340,6 +445,26 @@
   </div>
 </header>
 
+<!-- ===== Daily Info: Weather + Motivational Quote ===== -->
+<div class="daily-info">
+
+  <!-- Weather Card -->
+  <div class="weather-card">
+    <div class="card-label">🌏 東京の天気</div>
+    <div id="weather-content">
+      <div class="weather-loading">天気情報を取得中...</div>
+    </div>
+  </div>
+
+  <!-- Motivational Quote Card -->
+  <div class="quote-card">
+    <div class="card-label">✨ 今日のひと言</div>
+    <div class="quote-text" id="daily-quote"></div>
+    <div class="quote-day" id="quote-day"></div>
+  </div>
+
+</div>
+
 <div class="container">
   <button class="add-btn" onclick="openEventModal()">
     <span style="font-size:1.1rem">＋</span> 予定を追加
@@ -475,6 +600,129 @@
   let db = null;
   let syncRef = null;
   let currentSyncCode = null;
+
+  // ===== Weather =====
+  const WMO_MAP = {
+    0:  { icon: '☀️',  desc: '快晴' },
+    1:  { icon: '🌤️', desc: 'ほぼ晴れ' },
+    2:  { icon: '⛅',  desc: '一部曇り' },
+    3:  { icon: '☁️',  desc: '曇り' },
+    45: { icon: '🌫️', desc: '霧' },
+    48: { icon: '🌫️', desc: '霧氷' },
+    51: { icon: '🌦️', desc: '霧雨（弱）' },
+    53: { icon: '🌦️', desc: '霧雨' },
+    55: { icon: '🌦️', desc: '霧雨（強）' },
+    61: { icon: '🌧️', desc: '小雨' },
+    63: { icon: '🌧️', desc: '雨' },
+    65: { icon: '🌧️', desc: '大雨' },
+    71: { icon: '🌨️', desc: '小雪' },
+    73: { icon: '🌨️', desc: '雪' },
+    75: { icon: '🌨️', desc: '大雪' },
+    77: { icon: '🌨️', desc: '霰' },
+    80: { icon: '🌦️', desc: 'にわか雨（弱）' },
+    81: { icon: '🌧️', desc: 'にわか雨' },
+    82: { icon: '⛈️', desc: '激しいにわか雨' },
+    85: { icon: '🌨️', desc: 'にわか雪' },
+    86: { icon: '🌨️', desc: '激しいにわか雪' },
+    95: { icon: '⛈️', desc: '雷雨' },
+    96: { icon: '⛈️', desc: '雷雨（雹あり）' },
+    99: { icon: '⛈️', desc: '激しい雷雨（雹あり）' },
+  };
+
+  function getWeatherInfo(code) {
+    return WMO_MAP[code] || { icon: '🌡️', desc: '不明' };
+  }
+
+  async function fetchTokyoWeather() {
+    const url = 'https://api.open-meteo.com/v1/forecast'
+      + '?latitude=35.6762&longitude=139.6503'
+      + '&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m'
+      + '&timezone=Asia%2FTokyo';
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('API error');
+    return res.json();
+  }
+
+  function renderWeather(data) {
+    const c = data.current;
+    const info = getWeatherInfo(c.weather_code);
+    document.getElementById('weather-content').innerHTML = `
+      <div class="weather-main">
+        <div class="weather-icon">${info.icon}</div>
+        <div class="weather-details">
+          <div class="weather-temp">${Math.round(c.temperature_2m)}°C</div>
+          <div class="weather-desc">${info.desc}</div>
+        </div>
+      </div>
+      <div class="weather-sub">
+        <span>体感 ${Math.round(c.apparent_temperature)}°C</span>
+        <span>湿度 ${c.relative_humidity_2m}%</span>
+        <span>風速 ${c.wind_speed_10m} km/h</span>
+      </div>
+    `;
+  }
+
+  function initWeather() {
+    fetchTokyoWeather()
+      .then(renderWeather)
+      .catch(() => {
+        document.getElementById('weather-content').innerHTML =
+          '<div class="weather-error">天気情報を取得できませんでした</div>';
+      });
+  }
+
+  // ===== Motivational Quotes =====
+  const QUOTES = [
+    'どんな小さな一歩も、昨日の自分を超えている。',
+    '今日という日は、残りの人生の最初の日。',
+    '失敗は成功のための練習だ。',
+    '自分を信じることが、最初の秘訣。',
+    '困難な道は、必ず美しい場所へつながっている。',
+    '行動なしに夢は現実にならない。でも夢なしに行動も生まれない。',
+    '今日できることを積み重ねれば、明日は変わる。',
+    '完璧を待つな。今すぐ始めろ。',
+    '努力した時間は、絶対に裏切らない。',
+    'あなたの可能性は、まだ誰にも証明されていない。',
+    '嵐の後には、必ず虹が出る。',
+    '今日の自分が、明日の自分を作る。',
+    '笑顔は最強の武器だ。',
+    '一歩踏み出す勇気が、世界を変える。',
+    '昨日の限界は、今日の出発点にすぎない。',
+    'どんな状況でも、学べることがある。',
+    '夢を持ち続ける人は、いつまでも若い。',
+    '挑戦しない後悔より、挑戦した失敗の方が清々しい。',
+    '今この瞬間に集中することが、最高の生き方だ。',
+    '感謝の気持ちが、豊かな人生をつくる。',
+    '人生は一度きり。思いきり輝こう。',
+    '小さな積み重ねが、大きな変化を生む。',
+    '自分の限界は、自分が決めるものではない。',
+    'どんな日も、良いことを一つ見つけよう。',
+    '勇気とは、恐れがないことではなく、恐れても前に進むことだ。',
+    '太陽が昇るように、あなたにも新しいチャンスが来る。',
+    '今日の親切は、明日の喜びになる。',
+    '自分らしくあることが、最大の強みだ。',
+    '成功は準備と機会が出会う場所にある。',
+    'どんな山も、一歩ずつ登れば必ず頂上に着く。',
+    '今日も生きているだけで、十分すごい。',
+  ];
+
+  function getDailyQuote() {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const diff = now - start;
+    const oneDay = 1000 * 60 * 60 * 24;
+    const dayOfYear = Math.floor(diff / oneDay);
+    return QUOTES[dayOfYear % QUOTES.length];
+  }
+
+  function initQuote() {
+    const n = new Date();
+    const days = ['日','月','火','水','木','金','土'];
+    document.getElementById('daily-quote').textContent = getDailyQuote();
+    document.getElementById('quote-day').textContent =
+      `${n.getFullYear()}年${n.getMonth()+1}月${n.getDate()}日（${days[n.getDay()]}）`;
+  }
 
   // ===== Firebase =====
   function loadStoredFbConfig() {
@@ -769,7 +1017,6 @@
 
     let cfg;
     try {
-      // Accept either a plain object or one wrapped in `const firebaseConfig = {...}`
       const jsonStr = raw.replace(/^[\s\S]*?(\{[\s\S]*\})[\s\S]*$/, '$1');
       cfg = JSON.parse(jsonStr);
     } catch {
@@ -889,8 +1136,12 @@
   updateDate();
   updateClock();
   autoConnect();
+  initWeather();
+  initQuote();
   setInterval(updateClock, 1000);
   setInterval(render, 60000);
+  // refresh weather every 30 minutes
+  setInterval(initWeather, 30 * 60 * 1000);
 </script>
 </body>
 </html>

@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>今日の天気・ひと言・スケジュール</title>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -19,46 +17,22 @@
     header {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 16px 24px;
+      padding: 20px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       box-shadow: 0 2px 12px rgba(0,0,0,0.15);
     }
 
-    header h1 { font-size: 1.4rem; font-weight: 700; }
-    #header-date { font-size: 0.85rem; opacity: 0.85; margin-top: 3px; }
-
-    .header-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 6px;
-    }
-
+    header h1 { font-size: 1.5rem; font-weight: 700; }
+    #header-date { font-size: 0.9rem; opacity: 0.85; margin-top: 4px; }
     #current-time {
-      font-size: 1.8rem;
+      font-size: 2rem;
       font-weight: 300;
       letter-spacing: 2px;
     }
 
-    .sync-btn {
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.35);
-      border-radius: 20px;
-      padding: 4px 12px;
-      color: white;
-      cursor: pointer;
-      font-size: 0.78rem;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      transition: background 0.15s;
-      white-space: nowrap;
-    }
-    .sync-btn:hover { background: rgba(255,255,255,0.28); }
-
-    /* ===== Daily Info Section (Weather + Quote) ===== */
+    /* Daily Info */
     .daily-info {
       max-width: 780px;
       margin: 20px auto 0;
@@ -67,7 +41,6 @@
       grid-template-columns: 1fr 1fr;
       gap: 14px;
     }
-
     @media (max-width: 520px) {
       .daily-info { grid-template-columns: 1fr; }
     }
@@ -88,81 +61,28 @@
       margin-bottom: 10px;
     }
 
-    .weather-main {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
+    .weather-main { display: flex; align-items: center; gap: 14px; }
     .weather-icon { font-size: 2.8rem; line-height: 1; }
-
     .weather-details { flex: 1; }
+    .weather-temp { font-size: 2rem; font-weight: 700; color: #2d3748; line-height: 1; }
+    .weather-desc { font-size: 0.88rem; color: #718096; margin-top: 3px; }
+    .weather-sub { display: flex; gap: 12px; margin-top: 10px; font-size: 0.78rem; color: #a0aec0; }
+    .weather-loading { color: #a0aec0; font-size: 0.88rem; }
+    .weather-error { color: #e53e3e; font-size: 0.82rem; }
 
-    .weather-temp {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #2d3748;
-      line-height: 1;
-    }
-
-    .weather-desc {
-      font-size: 0.88rem;
-      color: #718096;
-      margin-top: 3px;
-    }
-
-    .weather-sub {
-      display: flex;
-      gap: 12px;
-      margin-top: 10px;
-      font-size: 0.78rem;
-      color: #a0aec0;
-    }
-
-    .weather-loading {
-      color: #a0aec0;
-      font-size: 0.88rem;
-    }
-
-    .weather-error {
-      color: #e53e3e;
-      font-size: 0.82rem;
-    }
-
-    .quote-card {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
+    .quote-card { display: flex; flex-direction: column; justify-content: space-between; }
     .quote-text {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #2d3748;
-      line-height: 1.65;
-      flex: 1;
-      display: flex;
-      align-items: center;
+      font-size: 1rem; font-weight: 600; color: #2d3748;
+      line-height: 1.65; flex: 1; display: flex; align-items: center;
     }
-
     .quote-text::before {
-      content: '"';
-      font-size: 2rem;
-      color: #667eea;
-      line-height: 0;
-      margin-right: 6px;
-      align-self: flex-start;
-      padding-top: 10px;
+      content: '\201C';
+      font-size: 2rem; color: #667eea; line-height: 0;
+      margin-right: 6px; align-self: flex-start; padding-top: 10px;
     }
+    .quote-day { font-size: 0.72rem; color: #cbd5e0; margin-top: 10px; text-align: right; }
 
-    .quote-day {
-      font-size: 0.72rem;
-      color: #cbd5e0;
-      margin-top: 10px;
-      text-align: right;
-    }
-
-    /* ===== Container ===== */
+    /* Container */
     .container {
       max-width: 780px;
       margin: 0 auto;
@@ -170,17 +90,10 @@
     }
 
     .add-btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #667eea;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 12px 22px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      background: #667eea; color: white; border: none;
+      border-radius: 12px; padding: 12px 22px;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer;
       margin-bottom: 24px;
       transition: background 0.2s, transform 0.1s;
       box-shadow: 0 2px 8px rgba(102,126,234,0.4);
@@ -188,33 +101,17 @@
     .add-btn:hover { background: #5a6fd6; transform: translateY(-1px); }
     .add-btn:active { transform: translateY(0); }
 
-    .timeline {
-      position: relative;
-      padding-left: 64px;
-    }
+    .timeline { position: relative; padding-left: 64px; }
     .timeline::before {
-      content: '';
-      position: absolute;
-      left: 44px;
-      top: 0;
-      bottom: 0;
-      width: 2px;
-      background: #e2e8f0;
+      content: ''; position: absolute; left: 44px; top: 0; bottom: 0;
+      width: 2px; background: #e2e8f0;
     }
 
     .event-card {
-      background: white;
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-      border-left: 4px solid transparent;
-      transition: box-shadow 0.2s, transform 0.1s;
-      position: relative;
-      cursor: pointer;
+      background: white; border-radius: 12px; padding: 14px 16px;
+      margin-bottom: 10px; display: flex; align-items: flex-start; gap: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08); border-left: 4px solid transparent;
+      transition: box-shadow 0.2s, transform 0.1s; position: relative; cursor: pointer;
     }
     .event-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); transform: translateY(-1px); }
 
@@ -224,15 +121,10 @@
     .event-card.category-exercise { border-left-color: #e53e3e; }
     .event-card.category-other    { border-left-color: #9f7aea; }
 
-    .event-dot {
-      width: 12px; height: 12px;
-      border-radius: 50%;
-      margin-top: 4px;
-      flex-shrink: 0;
-    }
+    .event-dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
     .category-work .event-dot     { background: #4299e1; }
     .category-meal .event-dot     { background: #48bb78; }
-    .category-break .event-dot   { background: #ed8936; }
+    .category-break .event-dot    { background: #ed8936; }
     .category-exercise .event-dot { background: #e53e3e; }
     .category-other .event-dot    { background: #9f7aea; }
 
@@ -241,64 +133,41 @@
     .event-title { font-weight: 600; font-size: 0.98rem; word-break: break-word; }
     .event-note  { font-size: 0.82rem; color: #718096; margin-top: 4px; word-break: break-word; }
 
-    .event-actions {
-      display: flex; gap: 6px;
-      opacity: 0; transition: opacity 0.15s;
-      flex-shrink: 0;
-    }
+    .event-actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.15s; flex-shrink: 0; }
     .event-card:hover .event-actions { opacity: 1; }
 
     .icon-btn {
-      background: none;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      width: 30px; height: 30px;
-      cursor: pointer; font-size: 0.85rem;
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.15s;
+      background: none; border: 1px solid #e2e8f0; border-radius: 8px;
+      width: 30px; height: 30px; cursor: pointer; font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center; transition: background 0.15s;
     }
     .icon-btn:hover { background: #f7fafc; }
     .icon-btn.delete:hover { background: #fff5f5; border-color: #feb2b2; }
 
-    .now-line {
-      display: flex; align-items: center; gap: 8px;
-      margin-bottom: 10px; position: relative;
-    }
-    .now-line::after {
-      content: ''; flex: 1; height: 2px; background: #e53e3e;
-    }
+    .now-line { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .now-line::after { content: ''; flex: 1; height: 2px; background: #e53e3e; }
     .now-badge {
-      background: #e53e3e; color: white;
-      font-size: 0.72rem; font-weight: 700;
+      background: #e53e3e; color: white; font-size: 0.72rem; font-weight: 700;
       padding: 2px 8px; border-radius: 20px; white-space: nowrap;
     }
 
-    .empty-state {
-      text-align: center; padding: 48px 24px; color: #a0aec0;
-    }
+    .empty-state { text-align: center; padding: 48px 24px; color: #a0aec0; }
     .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
     .empty-state p { font-size: 0.95rem; }
 
-    /* ===== Modal base ===== */
+    /* Modal */
     .modal-overlay {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.45);
-      z-index: 100;
-      align-items: center; justify-content: center;
-      padding: 16px;
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 100;
+      align-items: center; justify-content: center; padding: 16px;
     }
     .modal-overlay.open { display: flex; }
 
     .modal {
-      background: white;
-      border-radius: 16px;
-      padding: 28px;
+      background: white; border-radius: 16px; padding: 28px;
       width: 100%; max-width: 440px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.2);
       animation: slideUp 0.2s ease;
-      max-height: 90vh;
-      overflow-y: auto;
     }
     @keyframes slideUp {
       from { transform: translateY(20px); opacity: 0; }
@@ -312,16 +181,12 @@
       color: #4a5568; margin-bottom: 6px;
     }
     .form-group input,
-    .form-group select,
     .form-group textarea {
-      width: 100%;
-      border: 1.5px solid #e2e8f0; border-radius: 8px;
-      padding: 10px 12px; font-size: 0.92rem;
-      font-family: inherit; color: #2d3748;
-      transition: border-color 0.15s; outline: none;
+      width: 100%; border: 1.5px solid #e2e8f0; border-radius: 8px;
+      padding: 10px 12px; font-size: 0.92rem; font-family: inherit;
+      color: #2d3748; transition: border-color 0.15s; outline: none;
     }
     .form-group input:focus,
-    .form-group select:focus,
     .form-group textarea:focus { border-color: #667eea; }
     .form-group textarea { resize: vertical; min-height: 72px; }
 
@@ -330,9 +195,8 @@
 
     .category-pills { display: flex; gap: 8px; flex-wrap: wrap; }
     .pill {
-      padding: 6px 14px; border-radius: 20px;
-      border: 1.5px solid #e2e8f0; font-size: 0.82rem;
-      cursor: pointer; transition: all 0.15s; background: white;
+      padding: 6px 14px; border-radius: 20px; border: 1.5px solid #e2e8f0;
+      font-size: 0.82rem; cursor: pointer; transition: all 0.15s; background: white;
     }
     .pill:hover { background: #f7fafc; }
     .pill.selected { color: white; border-color: transparent; }
@@ -342,92 +206,23 @@
     .pill[data-cat="exercise"].selected { background: #e53e3e; }
     .pill[data-cat="other"].selected    { background: #9f7aea; }
 
-    .modal-actions {
-      display: flex; justify-content: flex-end;
-      gap: 10px; margin-top: 22px;
-    }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
     .btn-cancel {
-      background: #f7fafc; border: 1.5px solid #e2e8f0;
-      border-radius: 8px; padding: 10px 20px;
-      font-size: 0.9rem; cursor: pointer; transition: background 0.15s;
+      background: #f7fafc; border: 1.5px solid #e2e8f0; border-radius: 8px;
+      padding: 10px 20px; font-size: 0.9rem; cursor: pointer; transition: background 0.15s;
     }
     .btn-cancel:hover { background: #edf2f7; }
     .btn-save {
-      background: #667eea; color: white; border: none;
-      border-radius: 8px; padding: 10px 22px;
-      font-size: 0.9rem; font-weight: 600;
+      background: #667eea; color: white; border: none; border-radius: 8px;
+      padding: 10px 22px; font-size: 0.9rem; font-weight: 600;
       cursor: pointer; transition: background 0.15s;
     }
     .btn-save:hover { background: #5a6fd6; }
-    .btn-danger {
-      background: #fff5f5; color: #e53e3e;
-      border: 1.5px solid #feb2b2;
-      border-radius: 8px; padding: 10px 18px;
-      font-size: 0.9rem; cursor: pointer; transition: background 0.15s;
-    }
-    .btn-danger:hover { background: #ffe4e4; }
 
     .section-label {
-      font-size: 0.78rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.08em;
-      color: #a0aec0; margin-bottom: 12px;
+      font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #a0aec0; margin-bottom: 12px;
     }
-
-    /* ===== Sync modal ===== */
-    .sync-tabs {
-      display: flex; border-bottom: 2px solid #e2e8f0;
-      margin-bottom: 20px; gap: 0;
-    }
-    .sync-tab {
-      padding: 8px 16px; cursor: pointer;
-      font-size: 0.88rem; font-weight: 600; color: #718096;
-      border-bottom: 2px solid transparent; margin-bottom: -2px;
-      transition: color 0.15s;
-    }
-    .sync-tab.active { color: #667eea; border-bottom-color: #667eea; }
-
-    .sync-panel { display: none; }
-    .sync-panel.active { display: block; }
-
-    .steps { list-style: none; counter-reset: step; }
-    .steps li {
-      counter-increment: step;
-      display: flex; gap: 12px;
-      margin-bottom: 12px; font-size: 0.88rem; line-height: 1.5;
-    }
-    .steps li::before {
-      content: counter(step);
-      background: #667eea; color: white;
-      width: 22px; height: 22px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;
-    }
-
-    .info-box {
-      background: #ebf8ff; border: 1px solid #bee3f8;
-      border-radius: 8px; padding: 12px 14px;
-      font-size: 0.84rem; color: #2b6cb0; margin-bottom: 16px;
-    }
-    .warn-box {
-      background: #fffbeb; border: 1px solid #fbd38d;
-      border-radius: 8px; padding: 12px 14px;
-      font-size: 0.84rem; color: #744210; margin-bottom: 16px;
-    }
-    .success-box {
-      background: #f0fff4; border: 1px solid #9ae6b4;
-      border-radius: 8px; padding: 12px 14px;
-      font-size: 0.84rem; color: #276749; margin-bottom: 16px;
-    }
-
-    .sync-code-display {
-      font-size: 1.3rem; font-weight: 700;
-      color: #667eea; letter-spacing: 2px;
-      background: #f7fafc; border-radius: 8px;
-      padding: 10px 16px; text-align: center;
-      margin-bottom: 12px; word-break: break-all;
-    }
-
-    a { color: #667eea; }
   </style>
 </head>
 <body>
@@ -437,46 +232,32 @@
     <h1>📅 今日のスケジュール</h1>
     <div id="header-date"></div>
   </div>
-  <div class="header-right">
-    <div id="current-time"></div>
-    <button class="sync-btn" id="sync-btn" onclick="openSyncModal()">
-      ☁️ <span id="sync-label">未接続</span>
-    </button>
-  </div>
+  <div id="current-time"></div>
 </header>
 
-<!-- ===== Daily Info: Weather + Motivational Quote ===== -->
 <div class="daily-info">
-
-  <!-- Weather Card -->
   <div class="weather-card">
     <div class="card-label">🌏 東京の天気</div>
-    <div id="weather-content">
-      <div class="weather-loading">天気情報を取得中...</div>
-    </div>
+    <div id="weather-content"><div class="weather-loading">天気情報を取得中...</div></div>
   </div>
-
-  <!-- Motivational Quote Card -->
   <div class="quote-card">
     <div class="card-label">✨ 今日のひと言</div>
     <div class="quote-text" id="daily-quote"></div>
     <div class="quote-day" id="quote-day"></div>
   </div>
-
 </div>
 
 <div class="container">
-  <button class="add-btn" onclick="openEventModal()">
+  <button class="add-btn" onclick="openModal()">
     <span style="font-size:1.1rem">＋</span> 予定を追加
   </button>
   <div class="section-label">スケジュール一覧</div>
   <div class="timeline" id="timeline"></div>
 </div>
 
-<!-- ===== Event Modal ===== -->
-<div class="modal-overlay" id="eventOverlay" onclick="handleEventOverlayClick(event)">
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
   <div class="modal">
-    <h2 id="event-modal-title">予定を追加</h2>
+    <h2 id="modal-title">予定を追加</h2>
     <div class="form-group">
       <label>タイトル *</label>
       <input type="text" id="input-title" placeholder="例: 朝のミーティング">
@@ -506,100 +287,17 @@
       <textarea id="input-note" placeholder="詳細やメモを入力..."></textarea>
     </div>
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeEventModal()">キャンセル</button>
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
       <button class="btn-save"   onclick="saveEvent()">保存</button>
     </div>
   </div>
 </div>
 
-<!-- ===== Sync Modal ===== -->
-<div class="modal-overlay" id="syncOverlay" onclick="handleSyncOverlayClick(event)">
-  <div class="modal" style="max-width:480px">
-    <h2>🔄 端末間同期の設定</h2>
-
-    <div class="sync-tabs">
-      <div class="sync-tab active" onclick="showSyncTab('setup')"  id="tab-setup">Firebase設定</div>
-      <div class="sync-tab"        onclick="showSyncTab('code')"   id="tab-code">同期コード</div>
-      <div class="sync-tab"        onclick="showSyncTab('status')" id="tab-status">接続状態</div>
-    </div>
-
-    <!-- Tab: Firebase setup -->
-    <div class="sync-panel active" id="panel-setup">
-      <div class="info-box">
-        Firebaseの無料プランでリアルタイム同期できます。<br>
-        以下の手順で設定してください（5分程度）。
-      </div>
-      <ol class="steps">
-        <li><a href="https://console.firebase.google.com/" target="_blank">Firebase Console</a> を開き、「プロジェクトを追加」</li>
-        <li>プロジェクト名を入力 → 作成完了まで待つ</li>
-        <li>左メニュー「構築」→「Realtime Database」→「データベースを作成」→「テストモードで開始」を選択</li>
-        <li>プロジェクトの概要 → 「&lt;/&gt;」(ウェブ) → アプリを登録 → <strong>firebaseConfig の JSON をコピー</strong></li>
-        <li>以下のテキストエリアに貼り付けて「保存」</li>
-      </ol>
-      <div class="form-group">
-        <label>firebaseConfig（JSON）</label>
-        <textarea id="fb-config-input" style="min-height:120px;font-size:0.8rem;font-family:monospace" placeholder='{
-  "apiKey": "...",
-  "authDomain": "...",
-  "databaseURL": "https://...",
-  "projectId": "...",
-  "storageBucket": "...",
-  "messagingSenderId": "...",
-  "appId": "..."
-}'></textarea>
-      </div>
-      <div id="fb-config-error" style="color:#e53e3e;font-size:0.82rem;margin-bottom:8px;display:none"></div>
-      <div class="modal-actions" style="margin-top:8px">
-        <button class="btn-cancel" onclick="closeSyncModal()">キャンセル</button>
-        <button class="btn-save"   onclick="saveFbConfig()">保存して次へ</button>
-      </div>
-    </div>
-
-    <!-- Tab: Sync code -->
-    <div class="sync-panel" id="panel-code">
-      <div class="info-box">
-        同じ同期コードを使うと、複数の端末でスケジュールが共有されます。<br>
-        自分だけのキーワード（例: <strong>tanaka-schedule</strong>）を設定してください。
-      </div>
-      <div class="warn-box">
-        ⚠️ コードを知っている人は全員データを閲覧・編集できます。推測されにくい文字列にしてください。
-      </div>
-      <div class="form-group">
-        <label>同期コード</label>
-        <input type="text" id="sync-code-input" placeholder="例: yamada-2024-schedule" maxlength="64">
-      </div>
-      <div id="sync-code-error" style="color:#e53e3e;font-size:0.82rem;margin-bottom:8px;display:none"></div>
-      <div class="modal-actions" style="margin-top:8px">
-        <button class="btn-cancel" onclick="closeSyncModal()">キャンセル</button>
-        <button class="btn-save"   onclick="applySyncCode()">接続</button>
-      </div>
-    </div>
-
-    <!-- Tab: Status -->
-    <div class="sync-panel" id="panel-status">
-      <div id="status-content"></div>
-      <div class="modal-actions" style="margin-top:8px">
-        <button class="btn-danger"  onclick="disconnectSync()">同期を解除</button>
-        <button class="btn-cancel"  onclick="closeSyncModal()">閉じる</button>
-      </div>
-    </div>
-
-  </div>
-</div>
-
 <script>
-  // ===== Constants =====
-  const STORAGE_KEY   = 'daily-schedule-v1';
-  const FB_CFG_KEY    = 'fb-config-v1';
-  const SYNC_CODE_KEY = 'sync-code-v1';
-
-  // ===== State =====
+  const STORAGE_KEY = 'daily-schedule-v1';
   let events = [];
   let editingId = null;
   let selectedCategory = 'work';
-  let db = null;
-  let syncRef = null;
-  let currentSyncCode = null;
 
   // ===== Weather =====
   const WMO_MAP = {
@@ -608,71 +306,48 @@
     2:  { icon: '⛅',  desc: '一部曇り' },
     3:  { icon: '☁️',  desc: '曇り' },
     45: { icon: '🌫️', desc: '霧' },
-    48: { icon: '🌫️', desc: '霧氷' },
-    51: { icon: '🌦️', desc: '霧雨（弱）' },
-    53: { icon: '🌦️', desc: '霧雨' },
-    55: { icon: '🌦️', desc: '霧雨（強）' },
+    51: { icon: '🌦️', desc: '霧雨' },
     61: { icon: '🌧️', desc: '小雨' },
     63: { icon: '🌧️', desc: '雨' },
     65: { icon: '🌧️', desc: '大雨' },
     71: { icon: '🌨️', desc: '小雪' },
     73: { icon: '🌨️', desc: '雪' },
     75: { icon: '🌨️', desc: '大雪' },
-    77: { icon: '🌨️', desc: '霰' },
-    80: { icon: '🌦️', desc: 'にわか雨（弱）' },
-    81: { icon: '🌧️', desc: 'にわか雨' },
-    82: { icon: '⛈️', desc: '激しいにわか雨' },
-    85: { icon: '🌨️', desc: 'にわか雪' },
-    86: { icon: '🌨️', desc: '激しいにわか雪' },
+    80: { icon: '🌦️', desc: 'にわか雨' },
     95: { icon: '⛈️', desc: '雷雨' },
-    96: { icon: '⛈️', desc: '雷雨（雹あり）' },
-    99: { icon: '⛈️', desc: '激しい雷雨（雹あり）' },
   };
 
-  function getWeatherInfo(code) {
-    return WMO_MAP[code] || { icon: '🌡️', desc: '不明' };
-  }
-
-  async function fetchTokyoWeather() {
-    const url = 'https://api.open-meteo.com/v1/forecast'
-      + '?latitude=35.6762&longitude=139.6503'
-      + '&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m'
-      + '&timezone=Asia%2FTokyo';
-
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('API error');
-    return res.json();
-  }
-
-  function renderWeather(data) {
-    const c = data.current;
-    const info = getWeatherInfo(c.weather_code);
-    document.getElementById('weather-content').innerHTML = `
-      <div class="weather-main">
-        <div class="weather-icon">${info.icon}</div>
-        <div class="weather-details">
-          <div class="weather-temp">${Math.round(c.temperature_2m)}°C</div>
-          <div class="weather-desc">${info.desc}</div>
+  async function initWeather() {
+    try {
+      const res = await fetch(
+        'https://api.open-meteo.com/v1/forecast'
+        + '?latitude=35.6762&longitude=139.6503'
+        + '&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m'
+        + '&timezone=Asia%2FTokyo'
+      );
+      const data = await res.json();
+      const c = data.current;
+      const info = WMO_MAP[c.weather_code] || { icon: '🌡️', desc: '不明' };
+      document.getElementById('weather-content').innerHTML = `
+        <div class="weather-main">
+          <div class="weather-icon">${info.icon}</div>
+          <div class="weather-details">
+            <div class="weather-temp">${Math.round(c.temperature_2m)}°C</div>
+            <div class="weather-desc">${info.desc}</div>
+          </div>
         </div>
-      </div>
-      <div class="weather-sub">
-        <span>体感 ${Math.round(c.apparent_temperature)}°C</span>
-        <span>湿度 ${c.relative_humidity_2m}%</span>
-        <span>風速 ${c.wind_speed_10m} km/h</span>
-      </div>
-    `;
+        <div class="weather-sub">
+          <span>体感 ${Math.round(c.apparent_temperature)}°C</span>
+          <span>湿度 ${c.relative_humidity_2m}%</span>
+          <span>風速 ${c.wind_speed_10m} km/h</span>
+        </div>`;
+    } catch {
+      document.getElementById('weather-content').innerHTML =
+        '<div class="weather-error">天気情報を取得できませんでした</div>';
+    }
   }
 
-  function initWeather() {
-    fetchTokyoWeather()
-      .then(renderWeather)
-      .catch(() => {
-        document.getElementById('weather-content').innerHTML =
-          '<div class="weather-error">天気情報を取得できませんでした</div>';
-      });
-  }
-
-  // ===== Motivational Quotes =====
+  // ===== Quote =====
   const QUOTES = [
     'どんな小さな一歩も、昨日の自分を超えている。',
     '今日という日は、残りの人生の最初の日。',
@@ -707,118 +382,23 @@
     '今日も生きているだけで、十分すごい。',
   ];
 
-  function getDailyQuote() {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 0);
-    const diff = now - start;
-    const oneDay = 1000 * 60 * 60 * 24;
-    const dayOfYear = Math.floor(diff / oneDay);
-    return QUOTES[dayOfYear % QUOTES.length];
-  }
-
   function initQuote() {
     const n = new Date();
     const days = ['日','月','火','水','木','金','土'];
-    document.getElementById('daily-quote').textContent = getDailyQuote();
+    const dayOfYear = Math.floor((n - new Date(n.getFullYear(), 0, 0)) / 86400000);
+    document.getElementById('daily-quote').textContent = QUOTES[dayOfYear % QUOTES.length];
     document.getElementById('quote-day').textContent =
       `${n.getFullYear()}年${n.getMonth()+1}月${n.getDate()}日（${days[n.getDay()]}）`;
   }
 
-  // ===== Firebase =====
-  function loadStoredFbConfig() {
-    try { return JSON.parse(localStorage.getItem(FB_CFG_KEY)); }
-    catch { return null; }
-  }
-
-  function storeFbConfig(cfg) {
-    localStorage.setItem(FB_CFG_KEY, JSON.stringify(cfg));
-  }
-
-  function sanitizeCode(s) {
-    return s.trim().replace(/[.#$[\]/\s]/g, '-').slice(0, 64);
-  }
-
-  function initFirebase(config) {
-    try {
-      if (!firebase.apps.length) {
-        firebase.initializeApp(config);
-      }
-      db = firebase.database();
-      return true;
-    } catch(e) {
-      console.error('Firebase init:', e);
-      return false;
-    }
-  }
-
-  function connectSync(code) {
-    if (!db) return;
-    const safe = sanitizeCode(code);
-    if (!safe) return;
-
-    if (syncRef) syncRef.off();
-
-    currentSyncCode = safe;
-    localStorage.setItem(SYNC_CODE_KEY, safe);
-    syncRef = db.ref('schedules/' + safe + '/events');
-
-    setSyncStatus('connecting');
-
-    syncRef.on('value', snap => {
-      const val = snap.val();
-      events = val ? Object.values(val) : [];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-      render();
-      setSyncStatus('synced');
-    }, err => {
-      console.error('Sync error:', err);
-      setSyncStatus('error');
-    });
-  }
-
-  function writeToFirebase() {
-    if (!syncRef) return;
-    const data = {};
-    events.forEach(ev => { data[ev.id] = ev; });
-    syncRef.set(data).catch(err => {
-      console.error('Write error:', err);
-      setSyncStatus('error');
-    });
-  }
-
-  function setSyncStatus(status) {
-    const label = document.getElementById('sync-label');
-    if (!label) return;
-    const map = {
-      disconnected: '未接続',
-      connecting:   '接続中…',
-      synced:       '同期中 ✓',
-      error:        'エラー ⚠',
-    };
-    label.textContent = map[status] || '未接続';
-    label.style.color = status === 'synced' ? '#9ae6b4'
-                      : status === 'error'  ? '#feb2b2'
-                      : status === 'connecting' ? '#fbd38d'
-                      : 'rgba(255,255,255,0.7)';
-  }
-
-  function autoConnect() {
-    const cfg = loadStoredFbConfig();
-    if (!cfg) return;
-    if (!initFirebase(cfg)) return;
-    const code = localStorage.getItem(SYNC_CODE_KEY);
-    if (code) connectSync(code);
-  }
-
   // ===== Data =====
-  function loadLocal() {
+  function load() {
     try { events = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
     catch { events = []; }
   }
 
   function save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-    writeToFirebase();
   }
 
   // ===== Render =====
@@ -847,7 +427,6 @@
 
     let html = '';
     let nowInserted = false;
-
     sorted.forEach(ev => {
       if (!nowInserted && nowMin <= timeToMin(ev.start)) {
         html += renderNowLine(nowMin);
@@ -856,7 +435,6 @@
       html += renderCard(ev);
     });
     if (!nowInserted) html += renderNowLine(nowMin);
-
     timeline.innerHTML = html;
   }
 
@@ -867,10 +445,10 @@
   }
 
   function renderCard(ev) {
-    const end     = ev.end  ? ` - ${ev.end}` : '';
+    const end = ev.end ? ` - ${ev.end}` : '';
     const noteHtml = ev.note ? `<div class="event-note">${esc(ev.note)}</div>` : '';
     return `
-      <div class="event-card category-${ev.category}" onclick="openEventModal('${ev.id}')">
+      <div class="event-card category-${ev.category}" onclick="openModal('${ev.id}')">
         <div class="event-dot"></div>
         <div class="event-body">
           <div class="event-time">${ev.start}${end}</div>
@@ -884,16 +462,13 @@
   }
 
   function esc(s) {
-    return String(s)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  // ===== Event Modal =====
-  function openEventModal(id) {
+  // ===== Modal =====
+  function openModal(id) {
     editingId = id || null;
-    document.getElementById('event-modal-title').textContent = id ? '予定を編集' : '予定を追加';
-
+    document.getElementById('modal-title').textContent = id ? '予定を編集' : '予定を追加';
     if (id) {
       const ev = events.find(e => e.id === id);
       if (!ev) return;
@@ -909,18 +484,17 @@
       document.getElementById('input-note').value  = '';
       selectCatByKey('work');
     }
-
-    document.getElementById('eventOverlay').classList.add('open');
+    document.getElementById('modalOverlay').classList.add('open');
     setTimeout(() => document.getElementById('input-title').focus(), 100);
   }
 
-  function closeEventModal() {
-    document.getElementById('eventOverlay').classList.remove('open');
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
     editingId = null;
   }
 
-  function handleEventOverlayClick(e) {
-    if (e.target === document.getElementById('eventOverlay')) closeEventModal();
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('modalOverlay')) closeModal();
   }
 
   function saveEvent() {
@@ -931,7 +505,6 @@
       return;
     }
     document.getElementById('input-title').style.borderColor = '';
-
     const ev = {
       id:       editingId || String(Date.now()),
       title,
@@ -940,17 +513,15 @@
       note:     document.getElementById('input-note').value.trim(),
       category: selectedCategory,
     };
-
     if (editingId) {
       const idx = events.findIndex(e => e.id === editingId);
       if (idx >= 0) events[idx] = ev;
     } else {
       events.push(ev);
     }
-
     save();
     render();
-    closeEventModal();
+    closeModal();
   }
 
   function deleteEvent(e, id) {
@@ -974,120 +545,6 @@
     selectedCategory = key;
   }
 
-  // ===== Sync Modal =====
-  function openSyncModal() {
-    const hasCfg  = !!loadStoredFbConfig();
-    const hasCode = !!localStorage.getItem(SYNC_CODE_KEY);
-
-    if (hasCfg && hasCode) {
-      showSyncTab('status');
-      updateStatusPanel();
-    } else if (hasCfg) {
-      showSyncTab('code');
-      const stored = localStorage.getItem(SYNC_CODE_KEY);
-      if (stored) document.getElementById('sync-code-input').value = stored;
-    } else {
-      showSyncTab('setup');
-      const stored = loadStoredFbConfig();
-      if (stored) document.getElementById('fb-config-input').value = JSON.stringify(stored, null, 2);
-    }
-
-    document.getElementById('syncOverlay').classList.add('open');
-  }
-
-  function closeSyncModal() {
-    document.getElementById('syncOverlay').classList.remove('open');
-  }
-
-  function handleSyncOverlayClick(e) {
-    if (e.target === document.getElementById('syncOverlay')) closeSyncModal();
-  }
-
-  function showSyncTab(name) {
-    ['setup','code','status'].forEach(t => {
-      document.getElementById('tab-' + t).classList.toggle('active', t === name);
-      document.getElementById('panel-' + t).classList.toggle('active', t === name);
-    });
-  }
-
-  function saveFbConfig() {
-    const raw = document.getElementById('fb-config-input').value.trim();
-    const errEl = document.getElementById('fb-config-error');
-    errEl.style.display = 'none';
-
-    let cfg;
-    try {
-      const jsonStr = raw.replace(/^[\s\S]*?(\{[\s\S]*\})[\s\S]*$/, '$1');
-      cfg = JSON.parse(jsonStr);
-    } catch {
-      errEl.textContent = 'JSONの形式が正しくありません。Firebase Consoleからコピーした内容をそのまま貼り付けてください。';
-      errEl.style.display = 'block';
-      return;
-    }
-
-    if (!cfg.apiKey || !cfg.databaseURL) {
-      errEl.textContent = 'apiKey と databaseURL が見つかりません。Realtime Database を有効にしてください。';
-      errEl.style.display = 'block';
-      return;
-    }
-
-    storeFbConfig(cfg);
-    if (initFirebase(cfg)) {
-      showSyncTab('code');
-      const stored = localStorage.getItem(SYNC_CODE_KEY);
-      if (stored) document.getElementById('sync-code-input').value = stored;
-    } else {
-      errEl.textContent = 'Firebaseの初期化に失敗しました。設定内容を確認してください。';
-      errEl.style.display = 'block';
-    }
-  }
-
-  function applySyncCode() {
-    const raw   = document.getElementById('sync-code-input').value;
-    const errEl = document.getElementById('sync-code-error');
-    errEl.style.display = 'none';
-
-    const safe = sanitizeCode(raw);
-    if (!safe) {
-      errEl.textContent = '同期コードを入力してください。';
-      errEl.style.display = 'block';
-      return;
-    }
-
-    if (!db) {
-      errEl.textContent = 'Firebaseが初期化されていません。「Firebase設定」タブで設定してください。';
-      errEl.style.display = 'block';
-      return;
-    }
-
-    connectSync(safe);
-    showSyncTab('status');
-    updateStatusPanel();
-    setTimeout(closeSyncModal, 1200);
-  }
-
-  function updateStatusPanel() {
-    const code = localStorage.getItem(SYNC_CODE_KEY) || '（未設定）';
-    const hasCfg = !!loadStoredFbConfig();
-    document.getElementById('status-content').innerHTML = hasCfg && currentSyncCode
-      ? `<div class="success-box">✅ 同期が有効です</div>
-         <p style="font-size:0.88rem;color:#4a5568;margin-bottom:8px">現在の同期コード：</p>
-         <div class="sync-code-display">${esc(code)}</div>
-         <p style="font-size:0.82rem;color:#718096">他の端末でも同じコードを入力すると、スケジュールが共有されます。</p>`
-      : `<div class="warn-box">⚠️ 現在は同期されていません。<br>「Firebase設定」タブで設定してください。</div>`;
-  }
-
-  function disconnectSync() {
-    if (!confirm('同期を解除しますか？\nデータはこの端末のローカルに残ります。')) return;
-    if (syncRef) { syncRef.off(); syncRef = null; }
-    currentSyncCode = null;
-    localStorage.removeItem(SYNC_CODE_KEY);
-    localStorage.removeItem(FB_CFG_KEY);
-    db = null;
-    setSyncStatus('disconnected');
-    closeSyncModal();
-  }
-
   // ===== Clock =====
   function updateClock() {
     const n = new Date();
@@ -1103,13 +560,10 @@
       `${n.getFullYear()}年${n.getMonth()+1}月${n.getDate()}日（${days[n.getDay()]}）`;
   }
 
-  // ===== Keyboard =====
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeEventModal(); closeSyncModal(); }
+    if (e.key === 'Escape') closeModal();
     if (e.key === 'Enter' && e.ctrlKey &&
-        document.getElementById('eventOverlay').classList.contains('open')) {
-      saveEvent();
-    }
+        document.getElementById('modalOverlay').classList.contains('open')) saveEvent();
   });
 
   // ===== Sample data =====
@@ -1131,16 +585,14 @@
 
   // ===== Init =====
   seedSampleData();
-  loadLocal();
+  load();
   render();
   updateDate();
   updateClock();
-  autoConnect();
   initWeather();
   initQuote();
   setInterval(updateClock, 1000);
   setInterval(render, 60000);
-  // refresh weather every 30 minutes
   setInterval(initWeather, 30 * 60 * 1000);
 </script>
 </body>
